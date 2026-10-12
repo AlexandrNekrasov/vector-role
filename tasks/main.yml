@@ -1,0 +1,69 @@
+---
+# tasks file for vector-role
+
+- name: Install ca-certificates and tar
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - tar
+      - gzip
+    state: present
+    update_cache: true
+
+- name: Get vector distrib
+  ansible.builtin.get_url:
+    url: "{{ vector_archive_url }}"
+    dest: "{{ vector_archive_path }}"
+    mode: '0644'
+    timeout: 120
+
+- name: Unarchive vector
+  ansible.builtin.unarchive:
+    src: "{{ vector_archive_path }}"
+    dest: /opt/
+    remote_src: true
+    creates: "/opt/{{ vector_archive_dir }}"
+
+- name: Check if vector directory exists
+  ansible.builtin.stat:
+    path: "{{ vector_install_dir }}"
+  register: vector_install_dir_stat
+
+- name: Rename vector directory
+  ansible.builtin.command:
+    cmd: "mv /opt/{{ vector_archive_dir }} {{ vector_install_dir }}"
+  when: not vector_install_dir_stat.stat.exists
+  changed_when: true
+
+- name: Create vector config dir
+  ansible.builtin.file:
+    path: "{{ vector_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create vector data dir
+  ansible.builtin.file:
+    path: "{{ vector_data_dir }}"
+    state: directory
+    owner: "{{ vector_user }}"
+    group: "{{ vector_group }}"
+    mode: '0755'
+
+- name: Deploy vector config
+  ansible.builtin.template:
+    src: vector.toml.j2
+    dest: "{{ vector_config_dir }}/vector.toml"
+    mode: '0644'
+  notify: Restart vector service
+
+- name: Ensure vector is running
+  ansible.builtin.shell:
+    cmd: |
+      if ! pgrep -x vector > /dev/null; then
+        nohup {{ vector_install_dir }}/bin/vector --config {{ vector_config_dir }}/vector.toml > /var/log/vector.log 2>&1 &
+        echo "started"
+      else
+        echo "already running"
+      fi
+  register: vector_status
+  changed_when: "'started' in vector_status.stdout"

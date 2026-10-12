@@ -1,0 +1,9 @@
+---
+# URL архива Vector (вычисляется из версии)
+vector_archive_url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-x86_64-unknown-linux-gnu.tar.gz"
+
+# Имя распакованной директории
+vector_archive_dir: "vector-{{ vector_version }}-x86_64-unknown-linux-gnu"
+
+# Путь к архиву на целевой машине
+vector_archive_path: "/tmp/vector-{{ vector_version }}.tar.gz"
