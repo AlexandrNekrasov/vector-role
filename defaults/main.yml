@@ -12,5 +12,7 @@ vector_data_dir: "/var/lib/vector"
 vector_config_dir: "/etc/vector"
 
 # Пользователь для data dir (должен совпадать с пользователем запуска)
-vector_user: "ubuntu"
-vector_group: "ubuntu"
+#vector_user: "ubuntu"
+#vector_group: "ubuntu"
+vector_user: "root"
+vector_group: "root"

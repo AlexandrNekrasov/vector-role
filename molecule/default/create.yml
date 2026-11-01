@@ -1,0 +1,50 @@
+---
+- name: Create
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Create a container
+      community.docker.docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.container_image }}"
+        state: started
+        command: "{{ item.container_command }}"
+        privileged: true
+        volumes:
+          - /sys/fs/cgroup:/sys/fs/cgroup:rw
+        tmpfs:
+          - /run
+          - /tmp
+        log_driver: json-file
+      register: result
+      loop: "{{ molecule_yml.platforms }}"
+
+    - name: Initialize molecule_inventory
+      ansible.builtin.set_fact:
+        molecule_inventory: {}
+
+    - name: Add container to molecule_inventory
+      vars:
+        inventory_partial_yaml: |
+          all:
+            children:
+              molecule:
+                hosts:
+                  "{{ item.name }}":
+                    ansible_connection: community.docker.docker
+                    ansible_python_interpreter: /usr/bin/python3
+      ansible.builtin.set_fact:
+        molecule_inventory: >
+          {{ molecule_inventory | combine(inventory_partial_yaml | from_yaml, recursive=true) }}
+      loop: "{{ molecule_yml.platforms }}"
+
+    - name: Dump molecule_inventory
+      ansible.builtin.copy:
+        content: |
+          {{ molecule_inventory | to_yaml }}
+        dest: "{{ molecule_ephemeral_directory }}/inventory/molecule_inventory.yml"
+        mode: "0600"
+
+    - name: Force inventory refresh
+      ansible.builtin.meta: refresh_inventory

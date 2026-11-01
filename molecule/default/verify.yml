@@ -1,0 +1,69 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if vector binary exists
+      ansible.builtin.stat:
+        path: /opt/vector/bin/vector
+      register: vector_bin
+
+    - name: Assert vector binary exists
+      ansible.builtin.assert:
+        that:
+          - vector_bin.stat.exists
+          - vector_bin.stat.executable
+        fail_msg: "Vector binary not found or not executable"
+        success_msg: "Vector binary exists and is executable"
+
+    - name: Check if vector config exists
+      ansible.builtin.stat:
+        path: /etc/vector/vector.toml
+      register: vector_config
+
+    - name: Assert vector config exists
+      ansible.builtin.assert:
+        that:
+          - vector_config.stat.exists
+        fail_msg: "Vector config not found"
+        success_msg: "Vector config exists"
+
+    - name: Check if vector is running
+      ansible.builtin.shell:
+        cmd: pgrep -x vector
+      register: vector_process
+      changed_when: false
+      failed_when: vector_process.rc != 0
+
+    - name: Assert vector is running
+      ansible.builtin.assert:
+        that:
+          - vector_process.stdout != ""
+        fail_msg: "Vector is not running"
+        success_msg: "Vector is running"
+
+    - name: Check vector config is valid
+      ansible.builtin.command:
+        cmd: /opt/vector/bin/vector validate --config-dir /etc/vector
+      register: vector_validate
+      changed_when: false
+      failed_when: vector_validate.rc != 0
+
+    - name: Assert vector config is valid
+      ansible.builtin.assert:
+        that:
+          - vector_validate.rc == 0
+        fail_msg: "Vector config is invalid"
+        success_msg: "Vector config is valid"
+
+    - name: Check vector data dir exists
+      ansible.builtin.stat:
+        path: /var/lib/vector
+      register: vector_data_dir
+
+    - name: Assert vector data dir exists
+      ansible.builtin.assert:
+        that:
+          - vector_data_dir.stat.exists
+        fail_msg: "Vector data dir not found"
+        success_msg: "Vector data dir exists"
