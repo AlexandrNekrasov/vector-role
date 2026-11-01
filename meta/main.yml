@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   role_name: vector_role
-  namespace: AlexandrNekrasov
+  namespace: alexandrnekrasov
   author: AlexandrNekrasov
   description: Install and configure Vector log collector
   license: MIT

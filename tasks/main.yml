@@ -41,7 +41,7 @@
     src: "{{ vector_archive_path }}"
     dest: /opt/
     remote_src: true
-    creates: "/opt/{{ vector_archive_dir }}"
+    creates: "{{ vector_install_dir }}/bin/vector"
 
 - name: Check if vector directory exists
   ansible.builtin.stat:
